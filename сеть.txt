@@ -1,0 +1,293 @@
+GRE
+
+через файл или через nmtui (но ттл изменить нельзя в nmtui)
+ttl поправить
+
+HQ-RTR
+
+nano /etc/gre_to_BR.sh
+
+#!/bin/bash
+ip tunnel add tun1 mode gre local 34.19.99.100 remote 2.2.1.2 ttl 64
+ip addr add 10.10.10.1/30 dev tun1
+ip link set tun1 up
+
+дать права для исполнения:
+chmod +x /etc/gre_to_BR.sh
+
+Запуск:
+/etc/gre_to_BR.sh
+
+для проверки:
+ip a
+
++ping
+
+Добавить скрипт в автозагрузку:
+nano /etc/crontab
+
+@reboot root /etc/gre_to_BR.sh
+
+++
+
+BR-RTR
+
+nano /etc/gre_to_HQ.sh
+
+#!/bin/bash
+ip tunnel add tun1 mode gre local 2.2.1.2 remote 34.19.99.100 ttl 64
+ip addr add 10.10.10.2/30 dev tun1
+ip link set tun1 up
+
+дать права для исполнения:
+chmod +x /etc/gre_to_HQ.sh
+
+Запуск:
+/etc/gre_to_HQ.sh
+
+для проверки:
+ip a
+
++ping
+
+Добавить скрипт в автозагрузку:
+nano /etc/crontab
+
+@reboot root /etc/gre_to_HQ.sh
+
+==============================
+
+OSPF
+
+BR-RTR
+
+изменить репозиторий для скачки софта
+nano /etc/apt/sources.list
+deb http://mirror.yandex.ru/debian bullseye main contrib non-free
+
+установка frr:
+apt update
+apt install frr -y
+
+Включить службы:
+vim /etc/frr/daemons
+(или nano)
+
+bgp
+ospf 
+vtysh (?)
+
+рестарт службы:
+systemctl restart frr
+
+перейти в cs лайк окружение:
+vtysh 
+
+conf t 
+router ospf
+network 192.168.0.0/24 area 0
+network 192.168.13.0/24 area 0
+network 10.10.10.0/30 area 0
+
+#запретить пересылку hello пакетов везде
+passive-interface default
+#разрешаем пересылку hello пакетов на интерфейсах
+no passive-interface tun1
+end
+
+wr
+
+sh ip ospf nei
+sh ip route
+
+++
+
+HQ-RTR
+
+изменить репозиторий для скачки софта
+nano /etc/apt/sources.list
+deb http://mirror.yandex.ru/debian bullseye main contrib non-free
+
+установка frr
+apt update
+apt install frr -y
+
+Включить службы:
+vim /etc/frr/daemons
+(или nano)
+
+bgp
+ospf 
+vtysh (?)
+
+рестарт службы:
+systemctl restart frr
+
+перейти в cs лайк окружение:
+vtysh 
+
+conf t 
+router ospf
+network 10.0.0.0/24 area 0
+network 10.10.10.0/30 area 0
+passive-interface default
+no passive-interface tun1
+end
+
+wr
+
+sh ip ospf nei
+sh ip route
+
+
+==============================
+
+IPSEC
+left - local adrr
+right - remote addr
+ike - из документации
+
+HQ-RTR
+
+установить пакет:
+apt install strongswan -y
+
+Настроить IPsec
+nano /etc/ipsec.conf
+
+config setup
+conn vpn
+	auto=start
+	type=tunnel
+	authby=secret
+	left=34.19.99.100
+	right=2.2.1.2
+	leftsubnet=0.0.0.0/0
+	rightsubnet=0.0.0.0/0
+	leftprotoport=gre
+	rightprotoport=gre
+	ike=aes128-sha256-modp3072 
+	esp=aes128-sha256
+
+прописать ключ:
+nano /etc/ipsec.secrets
+
+34.19.99.100 2.2.1.2 : PSK "P@ssw0rd"
+
+запустить
+ipsec restart
+
+ipsec status
+
++++
+
+BR-RTR
+
+установить пакет:
+apt install strongswan -y
+
+Настроить IPsec
+nano /etc/ipsec.conf
+
+config setup
+conn vpn
+	auto=start
+	type=tunnel
+	authby=secret
+	left=2.2.1.2
+	right=34.19.99.100
+	leftsubnet=0.0.0.0/0
+	rightsubnet=0.0.0.0/0
+	leftprotoport=gre
+	rightprotoport=gre
+	ike=aes128-sha256-modp3072 
+	esp=aes128-sha256
+
+прописать ключ:
+nano /etc/ipsec.secrets
+
+2.2.1.2 34.19.99.100 : PSK "P@ssw0rd"
+
+запустить
+ipsec restart
+
+ipsec status
+++
+
+ipsec stop
+ipsec start
+
+журнал:
+journalctl -xe
+==============================
+
+BGP
+
+ISP
+
+изменить репозиторий для скачки софта:
+nano /etc/apt/sources.list
+deb http://mirror.yandex.ru/debian bullseye main contrib non-free
+
+установка frr:
+apt update
+apt install frr -y
+
+Включить службы:
+nano /etc/frr/daemons
+bgp=yes
+
+рестарт службы:
+systemctl restart frr
+
+Настойка BGP cs_like:
+
+vtysh
+
+conf t
+router bgp 65000
+neighbor 34.19.99.100 remote-as 65020
+neighbor 2.2.1.2 remote-as 65030
+#neighbor <> activate
+#neighbor <> activate
+address-family ipv4 unicast
+neighbor 34.19.99.100 default-originate
+neighbor 2.2.1.2 default-originate
+end
+write
+
+
+убрать шлюз по умолчанию
+
+рестарт службы:
+systemctl restart networking
+
+
+
+HQ-RTR
+
+vtysh
+
+conf t
+router bgp 65020
+neighbor 34.19.99.1 remote-as 65000
+end
+write
+
+address-family ipv4 unicast
+neighbor 34.19.99.1 default-originate
+
+
+BR-RTR
+
+vtysh
+
+conf t
+router bgp 65030
+neighbor 2.2.1.1 remote-as 65000
+end
+write
+
+address-family ipv4 unicast
+neighbor 2.2.1.1 default-originate
+
