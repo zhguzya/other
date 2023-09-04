@@ -1,0 +1,48 @@
+conf t
+no ip domain lookup
+
+line console 0
+logging synchronous
+exit 
+
+hostname HQ-SW1
+
+vlan 100
+name Clients
+vlan 200
+name Servers
+exit
+
+defa interface range gi0/1-2
+interface range gi0/1-2
+channel-group 1 mode on
+exit
+
+defa interface po1
+interface port-channel 1
+descr to_HQ-SW2 
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+defa interface gi0/0
+interface GigabitEthernet0/0
+descr to_HQ-RTR
+ switchport trunk allowed vlan 200
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+defa interface gi0/3
+interface GigabitEthernet0/3
+descr to_HQ-DC
+ switchport access vlan 200
+ switchport mode access
+ 
+defa interface gi1/0
+interface GigabitEthernet1/0
+descr to_HQ-SRV1
+ switchport access vlan 200
+ switchport mode access
+
+interface Vlan200
+ ip address 10.0.0.10 255.255.255.0
+ no shutd

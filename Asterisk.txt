@@ -1,0 +1,48 @@
+HQ-SRV1 
+19.08.23
+
+установить asterisk
+yum install asterisk
+
+
+настойка модулей:
+nano  /etc/asterisk/modules.conf
+
+отказаться от загрузки от pjsip
+noload = chan_pjsip.so
+
+
+пользователи:
+/etc/asterisk/users.conf
+
+[2001]
+secret = 2001
+host = dynamic
+context = wsr23
+
+[2002]
+secret = 2002
+host = dynamic
+context = wsr23
+
+Далее настройка context:
+nano /etc/asterisk/extensions.conf
+
+номер строки 199
+над context
+[wsr23]
+exten => _200X!,1,Dial(SIP/${EXTEN})
+
+запуск:
+systemctl start asterisk
+systemctl statis asterisk
+
+на HQ-DC + BR-CLI
+Подключение клиентов:
+установить софт телефон
+линфон
+yum install linphone
+настройка на 12:05
+
+
+есть встроенный в рэдос телефон ekiga

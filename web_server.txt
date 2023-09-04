@@ -1,0 +1,137 @@
+HQ-SRV1
+alt стрелка влево вправо - новая терминальная линия
+установить appache
+yum install httpd
+
+модуль для авторизации по керберос:
+yum -y install mod_auth_kerb
+
+настройка SSO и апач
+/etc/httpd
+conf.d
+
+nano sso.conf
+
+<VirtualHost *:443>
+		ServerName www.company.work
+		DocumentRoot: /var/www/html/
+		SSLEngine on
+		SSLCertificateFile
+		SSLCertificateKeyFile
+		<Location />
+		AuthType Kerberos
+		KrbAuthRealms COMPANY.WORK
+		KrbServiceName HTTP/www.company.work@COMPANY.WORK
+		Krb5Keytab /etc/https/kerberos.keytab
+		KrbMethodNegotiate on 
+		KrbMethodK5Passwd off
+		require valid-user
+		KrbSaveCredentials on
+		</Location>
+</VirtualHost>
+		
+		
+/etc/krb5.conf - ничего не меняли 
+но если что:
+kdc = hq-dc.company.work:80
+admin_server = hq-dc.company.work:749
+
+
+
+добавить ипа сервис:
+ipa service-add HTTP/www.company.work 
+но нету ДНС
+если не получилось, то через графику.
+Через HQ-DC:
+войти во фри ипа
+создать запись в таблице hosts
+(см. обучение 9:53)
+
+	
+
+в корень (cd)
+вернуться в локалку
+получаем ключ керберос:
+kinit admin
+проверяем:
+klist
+
+ipa-getkeytab -s hq-dc.company.work -p HTTP/www.company.work -k /etc/httpd/kerberos.keytab
+cat /etc/httpd/kerberos.keytab
+
+SSL авторизация, работа сайта по https, добавить в sso.conf (перед location)
+SSLEngine on
+SSLCertificateFile
+SSLCertificateKeyFile
+
+
+Получить сертификаты на hq-dc (видео 10:02)
+
+
+пережать файлы между машинами (10:14)
+scp Загрузки/cert........
+
+Работа с сертом:
+cat /home/user/cert.pem
+
+cd /home/user
+ls
+openssl x509 -outform.....
+
+достать ключ 
+openssl pkey -in cert.pem -out cert.key
+
+
+вклчить модуль ssl
+yum install mod_ssl -y
+
+что-то поправили в файле sso.conf
+
+проверить конфигу апач до его включения:
+apachectl -t
+
+не завелось, потому что не получил приватный ключ
+ТРАБЛШУТИНГ НА ВИДЕО
+
+
+Команды 131 и 134 для работы FreeIPA CA
+ipa-service-add-host --hosts=hq-dc.company.work HTTP/www.company.work
+ipa-getcert request -r -f /tmp/cert1.crt -k /tmp/cert1.key -N CN=www.company.work. -D www.company.work -K HTTP/www.company.work
+ipa-getcert list
+
+Добавить в sso
+
+SSLCertificateFile /etc/httpd/cert1.crt
+SSLCertificateKeyFile /etc/httpd/cert1.key
+
+cd conf 
+Добисать, что надо случать 443 порт
+
+перезапуск апач
+
+
+чтобы открылся вэбсайт (11:22)
+cd /etc/chromium/policies/managed
+
+{
+		"AuthServerWhitelist":["[*.]company.work"]
+		"AuthNegotiateDelegateWhitelist":["[*.]company.work"]
+}
+
+вкл/выкл браузер
++нужно получить керберес ключ
+
+на HQ-SRV
+прописать строку (11:30) - collegues
+systemctl restart httpd
+
+керберес ключ не хватало прав (11:33)
+
+
+Для неавтризированных добавить запись на сайт:
+после require
+ErrorDocument 401 "We are waiting to you for work with us!"
+
+рестарт сервиса httpd
+
+

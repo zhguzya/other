@@ -1,0 +1,36 @@
+IPSEC
+left - local adrr
+right - remote addr
+ike - из документации
+
+HQ-RTR
+
+установить пакет:
+apt install strongswan -y
+
+Настроить IPsec
+nano /etc/ipsec.conf
+
+config setup
+conn vpn
+	auto=start
+	type=tunnel
+	authby=secret
+	left=34.19.99.100
+	right=2.2.1.2
+	leftsubnet=0.0.0.0/0
+	rightsubnet=0.0.0.0/0
+	leftprotoport=gre
+	rightprotoport=gre
+	ike=aes128-sha256-modp3072 
+	esp=aes128-sha256
+
+прописать ключ:
+nano /etc/ipsec.secrets
+
+34.19.99.100 2.2.1.2 : PSK "P@ssw0rd"
+
+запустить
+ipsec restart
+
+ipsec status

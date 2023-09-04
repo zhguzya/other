@@ -1,0 +1,37 @@
+NAT:
+
+вкл:
+nano /etc/sysctl.conf
+ip_forward
+
+загрузите новые настройки:
+sysctl -p
+
+проверть статус службы:
+sysctl status nftables
+
+nftables:
+(saddr можно указать разные src сети, построчно)
+nano /etc/nftables.conf
+
+
+table ip nat {
+	chain postrouting {
+		type nat hook postrouting priority 0;
+		ip saddr 192.168.0.0/16 oifname ens18 counter masquerade;
+}
+}
+
+nft -f /etc/nftables.conf
+
+автозагрузка (запуск+автозагрузка)
+systemctl enable --now nftables
+
+запуск:
+systemctl start nftables
+
+вывести список всех правил:
+nft list ruleset
+
+перезапуск:
+reboot

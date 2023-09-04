@@ -1,0 +1,42 @@
+OSPF
+
+BR-RTR
+
+изменить репозиторий для скачки софта
+nano /etc/apt/sources.list
+deb http://mirror.yandex.ru/debian bullseye main contrib non-free
+
+установка frr:
+apt update
+apt install frr -y
+
+Включить службы:
+nano /etc/frr/daemons
+
+
+bgp
+ospf 
+vtysh (?)
+
+рестарт службы:
+systemctl restart frr
+
+перейти в cs лайк окружение:
+vtysh 
+
+conf t 
+router ospf
+network 192.168.0.0/24 area 0
+network 192.168.13.0/24 area 0
+network 10.10.10.0/30 area 0
+
+#запретить пересылку hello пакетов везде
+passive-interface default
+#разрешаем пересылку hello пакетов на интерфейсах
+no passive-interface tun1
+end
+
+wr
+
+sh ip ospf nei
+sh ip route

@@ -1,0 +1,115 @@
+DC
+
+днс установить:
+94.232.137.104
+
+керберес ключ
+добавить ключ
+kinit admin
+
+проверить ключ
+klist
+
+Установить сервер времени (настройки есть):
+nano etc/chrony.conf
+
+проверить синхр времени:
+chronyc sources
+
+настроить FQDN:
+через nmtui
+или
+hostnamectl set-hostname hq-dc
+
+hostame -f
+
+установить с помощью yam freeIPA:
+yum install bind bind-dyndb-ldap ipa-server ipa-server-dns ipa-server-trust-ad
+
+настройка IPA:
+
+java должна быть версиии 8 (не 11)
+удалить пакет java 11 (rpm ....) 
+
+переключить в инфру нашу (не в интернет!)
+ipa-server-install --mkhomedir
+bind yes
+пароли везде P@ssw0rd
+dns forward yes
+skip
+reverse yes
+yes
+ntp no
+cert yes
+
+
+скрипт (для всех групп сделать, чтобы было 30 пользователей)
+
+/root/ipausers.sh
+
+cat ipausers.sh
+#!/bin/bash
+for i in (1..10}; do
+	echo P@sswOrd | ipa user-add user$i --first=user --last=$i --password
+	ipa group-add-member BRANCH --users=user$i 
+	done
+	
+
+дать прав:
+chmod +x ipausers.sh
+
+Создание пользователей:
+керберос ключ выдает
+kinit admin
+
+наличие ключа:
+klist
+
+добавить группу:
+ipa group-add BRANCH
+
+запустить скрипт на создание пользователей
+
+==============
+На клиентах:
+
+обновить список доступных репозиториев (+одновременно обновляется система на редос) на всех SRV,CLI,DKR.
+Можно до установки freeIPA
+dnf update
+yum update
+
+обязательно нужен ДНС сервер в инфре для работы контроллера домена
+
+на HQ-SRV1
+yum update
+
+редачим хостс
+nano /etc/hosts
+10.0.0.100 company.work hq-dc.company.work
+
+
+yum install ipa-client -y
+
+установка IPA клиента:
+ipa-client-install --mkhomedir
+имя домена: company.work
+ipa сервер: hq-dc.company.work
+yes
+no
+yes (если все верно)
+логин: admin
+пароль: P@sswOrd
+
+проверить, что все ок:
+id user19
+id user30
+или через UI в браузере hq-dc.company.work, вкладка узлы
+
+
+
+
+
+
+
+
+

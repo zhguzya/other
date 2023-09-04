@@ -1,0 +1,26 @@
+GRE
+
+HQ-RTR
+скрипт на баше:
+nano /etc/gre_to_BR.sh
+
+#!/bin/bash
+ip tunnel add tun1 mode gre local 34.19.99.100 remote 2.2.1.2 ttl 64
+ip addr add 10.10.10.1/30 dev tun1
+ip link set tun1 up
+
+дать права для исполнения:
+chmod +x /etc/gre_to_BR.sh
+
+Запуск:
+/etc/gre_to_BR.sh
+
+для проверки:
+ip a
+
++ping
+
+Добавить скрипт в автозагрузку:
+nano /etc/crontab
+
+@reboot root /etc/gre_to_BR.sh

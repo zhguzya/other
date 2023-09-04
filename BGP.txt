@@ -1,0 +1,50 @@
+BGP
+
+ISP
+
+изменить репозиторий для скачки софта:
+nano /etc/apt/sources.list
+deb http://mirror.yandex.ru/debian bullseye main contrib non-free
+
+установка frr:
+apt update
+apt install frr -y
+
+Включить службы:
+nano /etc/frr/daemons
+bgp=yes
+
+рестарт службы:
+systemctl restart frr
+
+Настойка BGP cs_like:
+
+vtysh
+
+conf t
+router bgp 65000
+neighbor 34.19.99.100 remote-as 65020
+neighbor 2.2.1.2 remote-as 65030
+#neighbor <> activate
+#neighbor <> activate
+address-family ipv4 unicast
+neighbor 34.19.99.100 default-originate
+neighbor 2.2.1.2 default-originate
+end
+write
+
+
+убрать шлюз по умолчанию
+
+рестарт службы:
+systemctl restart networking
+
+HQ-RTR
+
+vtysh
+
+conf t
+router bgp 65020
+neighbor 34.19.99.1 remote-as 65000
+end
+write

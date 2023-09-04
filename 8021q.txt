@@ -1,0 +1,26 @@
+проверить и включить 8021q:
+lsmode | grep 8021q
+modprobe 8021q
+
+
+Адресации :
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 2.2.1.2/24
+gateway 2.2.1.1
+
+
+auto ens19.300
+iface ens19.300 inet static
+address 192.168.0.1/24
+vlan-raw-device ens19
+
+auto ens20.350
+iface ens20.350 inet static
+address 192.168.13.1/24
+vlan-raw-device ens20
+
+
+systemctl restart networking

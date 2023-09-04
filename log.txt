@@ -1,0 +1,191 @@
+logging <ip server BR-SRV1>
+на свиче HQ
+
+conf t 
+ip route 0.0.0.0 0.0.0.0 10.0.0.1
+logging 192.168.0.150
+logging trap errors
+end
+wr
+
+на свиче BR
+
+conf t 
+ip route 0.0.0.0 0.0.0.0 192.168.0.1
+logging 192.168.0.150
+logging trap errors
+end
+wr
+
+смоделировать ошибку:
+
+
+===========
+br-srv
+со стороны сервера принимать все, со стороны клиента отправлять только err (так лучше)
+настройка сислога:
+nano /etc/rsyslog.conf
+
+снять комменты UDP+TCP (module и input)
+
+RULES
+написать правило, что логи уровня errors собирались
+(может быть можно как маски прописать хостнеймы)
+
+*.err, если все нужно (не только error, но и информационные например), то *.*
+
+локальные логи SRV:
+*.err/opt/logs/BR-SRV1/errors.log
+
+if $hostname contains 'HQ-RTR' or $fromhost-ip contains '10.0.0.1' then {
+	*.err/opt/logs/HQ-RTR/error.log		
+}
+
+if $hostname contains 'HQ-SW1' or $fromhost-ip contains '10.0.0.10' then {
+	*.err/opt/logs/HQ-SW1/error.log	
+}
+
+if $hostname contains 'HQ-SW2' or $fromhost-ip contains '10.0.0.20' then {
+	*.err/opt/logs/HQ-SW2/error.log	
+}
+
+if $hostname contains 'HQ-DC' or $fromhost-ip contains '10.0.0.100' then {
+	*.err/opt/logs/HQ-DC/error.log		
+}
+
+if $hostname contains 'HQ-SRV1' or $fromhost-ip contains '10.0.0.150' then {
+	*.err/opt/logs/HQ-SRV1/error.log		
+}
+
+if $hostname contains 'HQ-DKR' or $fromhost-ip contains '10.0.0.200' then {
+	*.err/opt/logs/HQ-DKR/error.log		
+}
+
+if $hostname contains 'BR-RTR' or $fromhost-ip contains '192.168.0.1' then {
+	*.err/opt/logs/BR-RTR/error.log		
+}
+
+if $hostname contains 'BR-SW1' or $fromhost-ip contains '192.168.0.10' then {
+	*.err/opt/logs/BR-SW1/error.log	
+}
+
+if $hostname contains 'BR-SW2' or $fromhost-ip contains '192.168.13.10' then {
+	*.err/opt/logs/BR-SW2/error.log	
+}
+
+if $hostname contains 'BR-DC' or $fromhost-ip contains '192.168.0.100' then {
+	*.err/opt/logs/BR-DC/error.log		
+}
+
+if $hostname contains 'BR-CLI' or $fromhost-ip contains '192.168.13.2' then {
+	*.err/opt/logs/BR-CLI/error.log		
+}
+
+
+
+перезапуск службы:
+systemctl restart rsyslog
+статус:
+systemctl status rsyslog
+
+выключить SE linux:
+nano /etc/selinux/config
+SELINUX=disabled
+
+или
+getenforce error.log
+setenforce 0
+
+перезапуск системы:
+reboot
+
+создать ошибку:
+logger -p auth.err 122342343
+
+проверить логи:
+cd opt/logs/BR-SRV1 
+ls
+
+cd opt/logs/
+ls
+grep ....
+
+ls -lh
+
+
+ротация логов:
+1 = Execute.
+2 = Write.
+4 = Read
+
+nano /etc/logrotate.d/mylog
+
+/opt/logs/BR-RTR/error.log {
+	rotate 3
+	size 10M
+	compress
+	delaycompress
+	missingok
+	notifempty
+	create 0644 root root
+	
+/opt/logs/BR-SW1/error.log {
+	rotate 3
+	size 10M
+	compress
+	delaycompress
+	missingok
+	notifempty
+	create 0644 root root
+	
+/opt/logs/BR-SW2/error.log {
+	rotate 3
+	size 10M
+	compress
+	delaycompress
+	missingok
+	notifempty
+	create 0644 root root
+	
+перезапустить сервис logrotate
+
+
+заполнить файл рандомными символами:
+cat /dev/urandom > error.log
+....
+
+
+вручную заархивировать:
+
+
+посмотреть общий конфиг:
+nano /etc/logrotate.conf
+
+раскомментить? dateext
+
+через крон ротация логов каждую минуту
+*/1 **** root logrotate /etc/logrotate.conf
+
+есть crontab.guru
+
+BR-RTR
+
+проверить связность с портом(netcut):
+nc 192.168.0.150 514
+
+настройка сислога:
+nano /etc/rsyslog.conf
+
+RULES
+@ -TCP???
+
+*.err @192.168.0.150
+
+перезапуск службы:
+systemctl restart rsyslog
+статус:
+systemctl status rsyslog
+
+logger -p auth.err test_BR-RTR
+
+
