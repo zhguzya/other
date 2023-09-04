@@ -1,3 +1,5 @@
+curl -o сеть.txt https://raw.githubusercontent.com/zhguzya/other/main/сеть.txt --output-dir C:\Users\zhguz\Desktop
+
 проверить и включить 8021q:
 lsmode | grep 8021q
 modprobe 8021q
