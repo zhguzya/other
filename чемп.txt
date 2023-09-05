@@ -1,3 +1,31 @@
+curl -o сеть.txt https://raw.githubusercontent.com/zhguzya/other/main/сеть.txt --output-dir C:\Users\zhguz\Desktop
+https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html
+
+Евгений Ижгузин, [03.09.2023 17:54]
+https://labs.play-with-docker.com/
+
+Евгений Ижгузин, [03.09.2023 17:54]
+https://redos.red-soft.ru/base/arm/arm-other/docker-install/
+
+Евгений Ижгузин, [03.09.2023 17:54]
+https://docs.docker.com/registry/deploying/
+
+Евгений Ижгузин, [03.09.2023 17:54]
+Про DDNS на FreeIPA почитать тут - https://wiki.astralinux.ru/pages/viewpage.action?pageId=32833574
+
+Евгений Ижгузин, [03.09.2023 17:54]
+https://docs.docker.com/registry/deploying/#get-a-certificate
+
+Доброго дня, прошу прощения что долго не отправлял.
+
+Краткая инструкция тут -
+Дополнения будут сегодня по инструкции
+
+https://github.com/beezzlot/cloud-rostelecom
+https://docs.google.com/document/d/13JUSJPmxVgoqAav_artV1IjG17eQxYh55FLYhImS-ZI/edit?usp=sharing
+
+=======================================================================
+
 root:P@ssw0rd
 
 nmtui
