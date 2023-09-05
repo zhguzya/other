@@ -1,0 +1,410 @@
+root:P@ssw0rd
+
+nmtui
+systemctl restart networking
+hostnamectl set-hostname hq-rtr
+nano /etc/hostname
+nano /etc/sysctl.conf
+sysctl -p
+
+nano /etc/network/interfaces
+nano /etc/nftables.conf
+
+
+ISP
+
+auto ens18
+iface ens18 inet static
+address 34.19.99.1/24
+
+auto ens19
+iface ens19 inet static
+address 2.2.1.1/24
+
+nftables:
+nano /etc/nftables.conf
+
+table ip nat {
+	chain postrouting {
+		type nat hook postrouting priority 0;
+		ip saddr 0.0.0.0/0 oifname ens20 counter masquerade;
+}
+}
+
+nft -f /etc/nftables.conf
+
+HQ-RTR
+
+auto ens18
+iface ens18 inet static
+address 34.19.99.100/24
+gateway 34.19.99.1
+
+auto ens19.200
+iface ens19.200 inet static
+address 10.0.0.1/24
+vlan-raw-device ens19
+
+auto ens20
+iface ens20 inet static
+
+
+hostnamectl set-hostname hq-rtr
+reboot
+
+nano /etc/sysctl.conf
+ip_forward
+sysctl -p
+
+
+nftables:
+nano /etc/nftables.conf
+
+(saddr можно указать разные src сети, построчно)
+
+table ip nat {
+	chain postrouting {
+		type nat hook postrouting priority 0;
+		ip saddr 10.0.0.0/24 oifname ens18 counter masquerade;
+}
+}
+
+nft -f /etc/nftables.conf
+
+автозагрузка
+systemctl enable --now nftables
+systemctl start nftables
+
+
+
+
+
+
+HQ-SW1
+channel-protocol lacp 
+
+
+conf t
+no ip domain lookup
+
+line console 0
+logging synchronous
+exit 
+
+hostname HQ-SW1
+
+vlan 100
+name Clients
+vlan 200
+name Servers
+exit
+
+defa interface range gi0/1-2
+interface range gi0/1-2
+channel-group 1 mode on
+exit
+
+defa interface po1
+interface port-channel 1
+descr to_HQ-SW2 
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+defa interface gi0/0
+interface GigabitEthernet0/0
+descr to_HQ-RTR
+ switchport trunk allowed vlan 200
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+defa interface gi0/3
+interface GigabitEthernet0/3
+descr to_HQ-DC
+ switchport access vlan 200
+ switchport mode access
+ 
+defa interface gi1/0
+interface GigabitEthernet1/0
+descr to_HQ-SRV1
+ switchport access vlan 200
+ switchport mode access
+
+interface Vlan200
+ ip address 10.0.0.10 255.255.255.0
+ no shutd
+
+HQ-SW2
+
+
+conf t
+no ip domain lookup
+
+line console 0
+logging synchronous
+exit 
+
+hostname HQ-SW1
+
+vlan 100
+name Clients
+vlan 200
+name Servers
+exit
+
+defa interface range gi0/1-2
+interface range gi0/1-2
+channel-group 1 mode on
+exit
+
+defa interface po1
+interface port-channel 1
+descr to_HQ-SW1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+
+defa interface gi0/3
+interface GigabitEthernet0/3
+descr to_HQ-DKR
+ switchport access vlan 200
+ switchport mode access
+ 
+interface Vlan200
+ ip address 10.0.0.20 255.255.255.0
+ no shutd
+
+
+defa interface gi0/0
+interface GigabitEthernet0/0
+descr to_HQ-RTR
+
+хз, не надо:
+ switchport trunk allowed vlan 200
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+servers
+
+HQ-DC
+
+hostnamectl set-hostname hq-dc
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 10.0.0.100/24
+gateway 10.0.0.1
+
+DNS:
+94.232.137.104
+
+Синхронизация времени:
+chronyc sources
+
+какие клиенты испрользуют:
+chronyc clienst
+
+часовой пояс:
+timedatectl
+
+настроить имя fqdn:
+nmtui
+
+установить с помощью yam (пакетный менеджер) freeIPA:
+yum install bind bind-dyndb-ldap ipa-server ipa-server-dns ipa-server-trust-ad -y (+ добавить --skip-broken)
+
+настройка IPA:
+ipa-server-install --mkhomedir
+
+bind no
+пароли везде P@ssw0rd
+ntp no
+cert yes
+
+HQ-SRV1
+
+hostnamectl set-hostname hq-srv1
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 10.0.0.150/24
+gateway 10.0.0.1
+
+
+HQ-DKR
+
+hostnamectl set-hostname hq-dkr
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 10.0.0.200/24
+gateway 10.0.0.1
+
+
+================
+BR
+
+
+
+
+BR-RTR
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 2.2.1.2/24
+gateway 2.2.1.1
+
+
+auto ens19.300
+iface ens19.300 inet static
+address 192.168.0.1/24
+vlan-raw-device ens19
+
+auto ens20.350
+iface ens20.350 inet static
+address 192.168.13.1/24
+vlan-raw-device ens20
+
+
+systemctl restart networking
+
+
+BR-SW1
+
+conf t
+no ip domain lookup
+
+line console 0
+logging synchronous
+exit 
+
+hostname BR-SW1
+
+vlan 300
+name Servers
+exit
+
+defa interface range gi0/1-2
+interface range gi0/1-2
+channel-group 1 mode on
+exit
+
+defa interface po1
+interface port-channel 1 
+descr to_BR-SW2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+defa interface gi0/0
+interface GigabitEthernet0/0
+descr to_BR-RTR
+ switchport trunk allowed vlan 300
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+defa interface gi0/3
+interface GigabitEthernet0/3
+descr to_BR-DC
+ switchport access vlan 300
+ switchport mode access
+
+defa interface gi1/0
+interface gi1/0
+descr to_BR-SRV1
+interface GigabitEthernet1/0
+ switchport access vlan 300
+ switchport mode access
+
+interface Vlan300
+ ip address 192.168.0.10 255.255.255.0
+ no shutd
+ 
+BR-SW2
+
+conf t
+no ip domain lookup
+
+line console 0
+logging synchronous
+exit 
+
+hostname BR-SW2
+
+vlan 350
+name Clients
+exit
+
+defa interface range gi0/1-2
+interface range gi0/1-2
+channel-group 1 mode on
+exit
+
+defa interface po1
+interface port-channel 1 
+descr to_BR-SW1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+defa interface gi0/0
+interface GigabitEthernet0/0
+descr to_BR-RTR
+ switchport trunk allowed vlan 350
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+defa interface gi0/3
+interface GigabitEthernet0/3
+descr to_BR-CLI
+ switchport access vlan 350
+ switchport mode access
+
+
+interface Vlan350
+ip address 192.168.13.10 255.255.255.0
+no shutd
+
+
+
+
+BR-DC
+
+hostnamectl set-hostname br-dc
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 192.168.0.2/24
+gateway 192.168.0.1
+
+
+BR-SRV1
+
+hostnamectl set-hostname br-srv1
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 192.168.0.3/24
+gateway 192.168.0.1
+
+
+BR-CLI
+
+hostnamectl set-hostname br-cli
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 192.168.0.4/24
+gateway 192.168.0.1
+

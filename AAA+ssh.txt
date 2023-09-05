@@ -1,0 +1,24 @@
+AAA
+BR-SW1
+conf t
+username cisco privilege 15 secret cisco
+enable secret cisco
+aaa new-model
+aaa authentication login default local
+aaa authorization exec default local
+aaa authorization console  (уточнить в задании)
+
+можно не write
+
+SSH
+
+conf t 
+ip domain-name branch.company.work
+crypto key generate rsa
+1024 (или 768)
+
+ip ssh ver 2
+end
+sh ip ssh
+
+wr

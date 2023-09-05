@@ -1,10 +1,7 @@
 GRE
 
-через файл или через nmtui (но ттл изменить нельзя в nmtui)
-ttl поправить
-
 HQ-RTR
-
+скрипт на баше:
 nano /etc/gre_to_BR.sh
 
 #!/bin/bash
@@ -70,8 +67,8 @@ apt update
 apt install frr -y
 
 Включить службы:
-vim /etc/frr/daemons
-(или nano)
+nano /etc/frr/daemons
+
 
 bgp
 ospf 

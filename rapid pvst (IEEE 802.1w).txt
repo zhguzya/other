@@ -1,0 +1,20 @@
+на свиче HQ
+
+HQ-SW1
+conf t 
+spanning-tree mode rapid-pvst
+spanning-tree vlan 200 root primary
+spanning-tree vlan 100 root secondary
+end
+wr
+
+HQ-SW2
+
+conf t 
+spanning-tree mode rapid-pvst
+spanning-tree vlan 100 root primary
+spanning-tree vlan 200 root secondary
+end
+wr
+
+sh spann

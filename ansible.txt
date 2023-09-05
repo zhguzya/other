@@ -1,0 +1,199 @@
+
+
+18.08.23
+BR-SRV1
+Установка 
+yum install ansible
+ 
+
+собирать инфу с CLI
+
+перейти в каталог:
+cd /etc/ansible
+ls
+
+nano hosts
+ip br-cli
+
+подключениe br-cli по ssh:
+
+на CLI
+nano /etc/ssh/sshd_config
+раскомментировать (сможем с BR-SRV1 подкл по паролю)
+PermitRootLogin yes
+перзапуск:
+systemctl restart sshd
+
+на SRV1:
+авторизация по ключу
+генерируем ключ
+ssh-keygen
+(enter)
+
+ssh-copy-id root@192...
+password
+теперь можно авторизоваться по ключу
+
+на cli вернуть
+nano /etc/ssh/sshd_config
+раскомментировать (сможем с BR-SRV1 подкл по паролю)
+PermitRootLogin prohibit-password
+systemctl restart sshd
+
+====
+проверить, что ансибл подлкючается ко всем устройствам
+ansible all -m ping
+
+
+=====
+плейбук
+чувствительный к пробелам, нельзя табулировать
+nano serial.yml
+---
+- hosts: all (или IP)
+  tasks:
+	- name: Collect facts about PC
+	  package_facts:
+	    manager: rpm (можно ничего не писать)
+	- name: Render template
+	  template:
+	    src: ./templates/serial.tpl
+		dest: "{{ansible_facts.fqdn }}.yml"
+    - name: Download template
+	  fetch:
+	    src: "{{ansible_facts.fqdn }}.yml"
+		dest: "./PC_INFO/"
+		flat: yes
+		
+создать каталог
+mkdir temlates
+cd temlates/
+ls
+nano serial.tpl
+{% set error = "Программа не установлена" %}
+Имя компьютера: {{hostvars[inventory_hostname]['ansible_facts']['fqdn']}}
+IP адрес: {{hostvars[inventory_hostname]['ansible_facts']['default_ipv4']['address']}}
+{% if hostvars[inventory_hostname]['ansible_facts']['packages']['vim'] is defined %}
+Vim версия: {{hostvars[inventory_hostname]['ansible_facts']['packages']['vim'][0].version}}
+{% else %}
+Vim версия: {{ error }}
+{% endif %}
+{% if hostvars[inventory_hostname]['ansible_facts']['packages']['cromium'] is defined %}
+Cromium версия: {{hostvars[inventory_hostname]['ansible_facts']['packages']['cromium'][0].version}}
+{% else %}
+Comium версия: {{ error }}
+{% endif %}
+
+
+
+запусакем playbook:
+cd ..
+ls
+ansible-playbook serial.yml
+
+cd PC_INFO
+ls
+cat <файл>
+
+готовые плейбуки:
+galaxy.ansible.com
+установить:
+ansible-galaxy collection install cisco.ios
+
+установить доп модуль
+ansible-galaxy collection install ansible.netcommon 
+
+cd /etc/ansible/
+nano /hosts
+[switch]
+IP SW1
+IP SW2
+
+[switch:vars]
+ansible_user = cisco
+ansible_password = cisco
+ansible_network_os = ios или ansible.netcommon.network_cli
+ansible_connection = network_cli
+
+[routers]
+IP RTR
+IP RTR
+
+
+save
+ansible all -m ping
+
+(на циско настроить ssh и aaa)
+
+ssh -l cisco <ip>
+mismatch version
+ssh -oKexAlgorithms=+diffie-hellman-group1-shal -oHostKeyAlgorithms=+ssh-rsa cisco@192.168.1.111
+
+
+настройки ssh 
+nano /etc/ssh/ssh_config
+host <ip sw>
+	-oKexAlgorithms=+diffie-hellman-group1-shal
+	-oHostKeyAlgorithms=+ssh-rsa
+	
+	
+ssh cisco@ip (проверка)
+
+nano backup.yml (внутри ansible)
+---
+- hosts: switch 
+  tasks:
+    - name: Get config and save 
+	  ios config:
+       backup: yes 
+	   backup_options:
+         filename: "{{ansible_net_hostname}} {{ansible_host}}.cfg" 
+         dir_path: "./SW_INFO/"
+
+
+ansible-playbook backup.yml
+ls 
+cd SW_INFO/
+ls
+cat <file>
+
+
+
+19.08.23
+
+RTR
+
+установка open ssh server debian (RTR):
+apt install openssh-server -y
+
+настройка ssh:
+/etc/ssh/sshd_config
+PermitRootLogin yes (потом вернуть prohibit-password)
+save
+
+перезапуск службы
+systemctl restart ssh.d
+
+SRV:
+ssh-copy-id root@IP RTR
+
+nano backup_RTR.yml
+---
+﻿- hosts: routers 
+  tasks:
+﻿﻿	- name: Get Config and save 
+      fetch:
+	    src: /etc/frr/frr.conf 
+	    dest: "./ROUTER_INFO/{{ansible_facts.fqdn}}.cfg" 
+	    flat: yes
+		
+save
+ansible-playbook backup-RTR.yml
+
+cd ROUTER_INFO/
+ls
+cat <file>
+
+
+
+

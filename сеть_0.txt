@@ -1,0 +1,111 @@
+BR-RTR
+
+проверить и включить 8021q:
+lsmode | grep 8021q
+modprobe 8021q
+
+
+Адресации :
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 2.2.1.2/24
+gateway 2.2.1.1
+
+
+auto ens19.300
+iface ens19.300 inet static
+address 192.168.0.1/24
+vlan-raw-device ens19
+
+auto ens20.350
+iface ens20.350 inet static
+address 192.168.13.1/24
+vlan-raw-device ens20
+
+
+systemctl restart networking
+
+
+NAT:
+
+вкл:
+nano /etc/sysctl.conf
+ip_forward
+
+загрузите новые настройки:
+sysctl -p
+
+проверть статус службы:
+sysctl status nftables
+
+nftables:
+(saddr можно указать разные src сети, построчно)
+nano /etc/nftables.conf
+
+
+table ip nat {
+	chain postrouting {
+		type nat hook postrouting priority 0;
+		ip saddr 192.168.0.0/16 oifname ens18 counter masquerade;
+}
+}
+
+nft -f /etc/nftables.conf
+
+автозагрузка (запуск+автозагрузка)
+systemctl enable --now nftables
+
+запуск:
+systemctl start nftables
+
+вывести список всех правил:
+nft list ruleset
+
+перезапуск:
+reboot
+
+BR-DC
+
+hostnamectl set-hostname br-dc
+
+IP через nmtui + имя *.company.work
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 192.168.0.100/24
+gateway 192.168.0.1
+
+
+BR-SRV1
+
+hostnamectl set-hostname br-srv1
+
+IP через nmtui + имя *.company.work
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 192.168.0.150/24
+gateway 192.168.0.1
+
+
+BR-CLI
+
+hostnamectl set-hostname br-cli
+
+IP через nmtui + имя *.company.work
+
+nano /etc/network/interfaces
+
+auto ens18
+iface ens18 inet static
+address 192.168.13.2/24
+gateway 192.168.13.1
+
+
+
