@@ -3,3 +3,144 @@ https://github.com/beezzlot/cloud-rostelecom/tree/main
 https://github.com/beezzlot/cloud-rostelecom
 
 https://docs.google.com/document/d/13JUSJPmxVgoqAav_artV1IjG17eQxYh55FLYhImS-ZI/edit?pli=1
+
+
+Maxim Glotov, [6 сен. 2023 в 14:50]
+# Используем alpine как базовый образ
+FROM alpine
+
+# Устанавливаем рабочую директорию /hello
+WORKDIR /hello
+
+# Копируем файл name.txt в рабочую директорию
+COPY name.txt /hello/
+
+# Команда, которая будет выполняться при запуске контейнера
+CMD echo "Hello, Rostelecom! Greetings from $(cat name.
+
+
+
+
+
+
+
+Maxim Glotov, [6 сен. 2023 в 14:50]
+# Используем alpine как базовый образ
+FROM alpine
+
+# Устанавливаем рабочую директорию /hello
+WORKDIR /hello
+
+# Копируем файл name.txt в рабочую директорию
+COPY name.txt /hello/
+
+# Команда, которая будет выполняться при запуске контейнера
+CMD echo "Hello, Rostelecom! Greetings from $(cat name.txt)"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Maxim Glotov, [6 сен. 2023 в 14:50]
+# Используем alpine как базовый образ
+FROM alpine
+
+# Устанавливаем рабочую директорию /hello
+WORKDIR /hello
+
+# Копируем файл name.txt в рабочую директорию
+COPY name.txt /hello/
+
+# Команда, которая будет выполняться при запуске контейнера
+CMD echo "Hello, Rostelecom! Greetings from $(cat name.txt)"
+
+Maxim Glotov, [6 сен. 2023 в 14:50]
+Dockerfile
+
+Maxim Glotov, [6 сен. 2023 в 14:50]
+docker build -t my-hello-image .
+
+Maxim Glotov, [6 сен. 2023 в 14:50]
+docker run my-hello-image
+
+Maxim Glotov, [6 сен. 2023 в 14:55]
+# Используйте базовый образ, который подходит для вашего приложения
+FROM alpine
+
+# Копируйте файлы приложения в образ
+COPY app1 /app1
+
+# Установите рабочую директорию
+WORKDIR /app1
+
+# Укажите версию приложения
+ENV APP_VERSION=1.0
+
+# Запустите ваше приложение
+CMD ["./app1"]
+
+Maxim Glotov, [6 сен. 2023 в 14:56]
+docker build -t my-registry/app1:1.0 .
+
+Maxim Glotov, [6 сен. 2023 в 14:56]
+docker login my-registry
+docker push my-registry/app1:1.0
+
+Maxim Glotov, [6 сен. 2023 в 14:56]
+# Сохраните образ в архив
+docker save -o app1_1.0.tar my-registry/app1:1.0
+
+# Перенесите архив на другую машину (например, с использованием scp)
+# Загрузите образ на другой машине
+docker load -i app1_1.0.tar
+
+Maxim Glotov, [6 сен. 2023 в 14:57]
+version: '3'
+
+services:
+  wiki:
+    image: mediawiki
+    ports:
+      - "80:80"
+    volumes:
+      - ~/LocalSettings.php:/var/www/html/LocalSettings.php
+    depends_on:
+      - db
+    networks:
+      - mediawiki_net
+
+  db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: @tomski!!s
+      MYSQL_DATABASE: mediawiki
+    volumes:
+      - dbvolume:/var/lib/mysql
+    networks:
+      - mediawiki_net
+
+volumes:
+  dbvolume:
+
+networks:
+  mediawiki_net:
+
+
+
+
+
+
+
+
